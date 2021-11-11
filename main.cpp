@@ -18,15 +18,15 @@
 
 enum class ALGORITHM_NAME
 {
-	UNIQUE_REPLACE_IF_FOR,
-	UNIQUE_REMOVE_IF_FOR,
-	REVERSE_REPLACE_IF_FOR,
-	REVERSE_REMOVE_IF_FOR,
-	FOR_EACH_TRANSFORM,
-	REPLACE_IF_FOR,
-	REMOVE_IF_FOR,
-	UNIQUE_FOR,
-	REVERSE_FOR,
+	UNIQUE_REPLACE_IF_TRANSFORM,
+	UNIQUE_REMOVE_IF_TRANSFORM,
+	REVERSE_REPLACE_IF_TRANSFORM,
+	REVERSE_REMOVE_IF_TRANSFORM,
+	TRANSFORM_TRANSFORM,
+	REPLACE_IF_TRANSFORM,
+	REMOVE_IF_TRANSFORM,
+	UNIQUE_TRANSFORM,
+	REVERSE_TRANSFORM,
 };
 
 template<typename ExPolicy>
@@ -42,71 +42,72 @@ void normal_benchmark(ExPolicy policy, std::string const& policy_name, ALGORITHM
 			[&]() { return dist(mersenne_engine); });
 
 		for (auto _ : state) {
+			std::vector<int> res(size);
+
 			switch (algo)
 			{
-			case ALGORITHM_NAME::UNIQUE_REPLACE_IF_FOR:
+			case ALGORITHM_NAME::UNIQUE_REPLACE_IF_TRANSFORM:
 			{
 				auto iter = hpx::unique(policy, arr.begin(), arr.end());
 				hpx::replace_if(policy, arr.begin(), iter, [](auto const& elem) {return elem == 2; }, 3);
-				hpx::for_each(policy, arr.begin(), iter, [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), iter, res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::UNIQUE_REMOVE_IF_FOR:
+			case ALGORITHM_NAME::UNIQUE_REMOVE_IF_TRANSFORM:
 			{
 				auto iter = hpx::unique(policy, arr.begin(), arr.end());
 				hpx::remove_if(policy, arr.begin(), iter, [](auto const& elem) {return elem == 2; });
-				hpx::for_each(policy, arr.begin(), iter, [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), iter, res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::REVERSE_REPLACE_IF_FOR:
+			case ALGORITHM_NAME::REVERSE_REPLACE_IF_TRANSFORM:
 			{
 				hpx::reverse(policy, arr.begin(), arr.end());
 				hpx::replace_if(policy, arr.begin(), arr.end(), [](auto const& elem) {return elem == 2; }, 3);
-				hpx::for_each(policy, arr.begin(), arr.end(), [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::REVERSE_REMOVE_IF_FOR:
+			case ALGORITHM_NAME::REVERSE_REMOVE_IF_TRANSFORM:
 			{
 				hpx::reverse(policy, arr.begin(), arr.end());
 				hpx::remove_if(policy, arr.begin(), arr.end(), [](auto const& elem) {return elem == 2; });
-				hpx::for_each(policy, arr.begin(), arr.end(), [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::FOR_EACH_TRANSFORM:
+			case ALGORITHM_NAME::TRANSFORM_TRANSFORM:
 			{
-				std::vector<int> res(size);
-				hpx::for_each(policy, arr.begin(), arr.end(), [](auto const& elem) {return elem * 2; });
+				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) {return elem * 2; });
 				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) {return elem * 2; });
 				benchmark::DoNotOptimize(res);
 				break;
 			}
-			case ALGORITHM_NAME::REPLACE_IF_FOR:
+			case ALGORITHM_NAME::REPLACE_IF_TRANSFORM:
 			{
 				hpx::replace_if(policy, arr.begin(), arr.end(), [](auto const& elem) {return elem == 2; }, 3);
-				hpx::for_each(policy, arr.begin(), arr.end(), [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::REMOVE_IF_FOR:
+			case ALGORITHM_NAME::REMOVE_IF_TRANSFORM:
 			{
 				hpx::remove_if(policy, arr.begin(), arr.end(), [](auto const& elem) {return elem == 2; });
-				hpx::for_each(policy, arr.begin(), arr.end(), [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::UNIQUE_FOR:
+			case ALGORITHM_NAME::UNIQUE_TRANSFORM:
 			{
 				auto iter = hpx::unique(policy, arr.begin(), arr.end());
-				hpx::for_each(policy, arr.begin(), iter, [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), iter, res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
-			case ALGORITHM_NAME::REVERSE_FOR:
+			case ALGORITHM_NAME::REVERSE_TRANSFORM:
 			{
 				hpx::reverse(policy, arr.begin(), arr.end());
-				hpx::for_each(policy, arr.begin(), arr.end(), [](auto const& elem) { return elem * 2; });
+				hpx::transform(policy, arr.begin(), arr.end(), res.begin(), [](auto const& elem) { return elem * 2; });
 				break;
 			}
 			}
 
-			benchmark::DoNotOptimize(arr);
+			benchmark::DoNotOptimize(res);
 		}
 
 		})->RangeMultiplier(2)->Range(32, till);
@@ -124,69 +125,62 @@ void range_benchmark(std::string const& name, ALGORITHM_NAME algo, std::size_t t
 			[&]() { return dist(mersenne_engine); });
 
 		for (auto _ : state) {
+			std::vector<int> res(size);
+
 			switch (algo)
 			{
-			case ALGORITHM_NAME::UNIQUE_REPLACE_IF_FOR:
+			case ALGORITHM_NAME::UNIQUE_REPLACE_IF_TRANSFORM:
 			{
 				auto rng1 = ranges::views::unique(arr);
 				auto rng2 = rng1 | ranges::views::replace_if([](auto const& elem) {return elem == 2; }, 3);
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::UNIQUE_REMOVE_IF_FOR:
+			case ALGORITHM_NAME::UNIQUE_REMOVE_IF_TRANSFORM:
 			{
 				auto rng1 = ranges::views::unique(arr);
 				auto rng2 = rng1 | ranges::views::remove_if([](auto const& elem) {return elem == 2; });
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::REVERSE_REPLACE_IF_FOR:
+			case ALGORITHM_NAME::REVERSE_REPLACE_IF_TRANSFORM:
 			{
 				auto rng1 = arr | ranges::views::reverse;
 				auto rng2 = rng1 | ranges::views::replace_if([](auto const& elem) {return elem == 2; }, 3);
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::REVERSE_REMOVE_IF_FOR:
+			case ALGORITHM_NAME::REVERSE_REMOVE_IF_TRANSFORM:
 			{
 				auto rng1 = arr | ranges::views::reverse;
 				auto rng2 = rng1 | ranges::views::remove_if([](auto const& elem) {return elem == 2; });
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::FOR_EACH_TRANSFORM:
+			case ALGORITHM_NAME::TRANSFORM_TRANSFORM:
 			{
-				std::vector<int> res(size);
 				auto rng2 = arr | ranges::views::transform([](auto const& elem) {return elem * 2; });
 				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) {return elem * 2; });
-				benchmark::DoNotOptimize(res);
-				benchmark::DoNotOptimize(rng2);
 			}
-			case ALGORITHM_NAME::REPLACE_IF_FOR:
+			case ALGORITHM_NAME::REPLACE_IF_TRANSFORM:
 			{
 				auto rng2 = arr | ranges::views::replace_if([](auto const& elem) {return elem == 2; }, 3);
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::REMOVE_IF_FOR:
+			case ALGORITHM_NAME::REMOVE_IF_TRANSFORM:
 			{
 				auto rng2 = arr | ranges::views::remove_if([](auto const& elem) {return elem == 2; });
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::UNIQUE_FOR:
+			case ALGORITHM_NAME::UNIQUE_TRANSFORM:
 			{
 				auto rng2 = ranges::views::unique(arr);
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
-			case ALGORITHM_NAME::REVERSE_FOR:
+			case ALGORITHM_NAME::REVERSE_TRANSFORM:
 			{
 				auto rng2 = arr | ranges::views::reverse;
-				hpx::ranges::for_each(hpx::execution::par, rng2, [](auto const& elem) { return elem * 2; });
-				benchmark::DoNotOptimize(rng2);
+				hpx::ranges::transform(hpx::execution::par, rng2, res.begin(), [](auto const& elem) { return elem * 2; });
 			}
 			}
+
+			benchmark::DoNotOptimize(res);
 		}
 
 		})->RangeMultiplier(2)->Range(32, till);
@@ -194,19 +188,18 @@ void range_benchmark(std::string const& name, ALGORITHM_NAME algo, std::size_t t
 
 int hpx_main(hpx::program_options::variables_map& vm) {
 	std::string algorithm_name = vm["algorithm_name"].as<std::string>();
-	unsigned int NUM_ITERATIONS = vm["num_iterations"].as<unsigned int>();
 	int max_i = vm["max_i"].as<int>();
 
 	std::map<std::string, ALGORITHM_NAME> nameToAlgo = {
-		{"UNIQUE_REPLACE_IF_FOR", ALGORITHM_NAME::UNIQUE_REPLACE_IF_FOR },
-		{"UNIQUE_REMOVE_IF_FOR", ALGORITHM_NAME::UNIQUE_REMOVE_IF_FOR },
-		{"REVERSE_REPLACE_IF_FOR", ALGORITHM_NAME::REVERSE_REPLACE_IF_FOR },
-		{"REVERSE_REMOVE_IF_FOR", ALGORITHM_NAME::REVERSE_REMOVE_IF_FOR },
-		{"FOR_EACH_TRANSFORM", ALGORITHM_NAME::FOR_EACH_TRANSFORM },
-		{"REPLACE_IF_FOR", ALGORITHM_NAME::REPLACE_IF_FOR },
-		{"REMOVE_IF_FOR", ALGORITHM_NAME::REMOVE_IF_FOR },
-		{"UNIQUE_FOR", ALGORITHM_NAME::UNIQUE_FOR },
-		{"REVERSE_FOR", ALGORITHM_NAME::REVERSE_FOR }
+		{"UNIQUE_REPLACE_IF_TRANSFORM", ALGORITHM_NAME::UNIQUE_REPLACE_IF_TRANSFORM },
+		{"UNIQUE_REMOVE_IF_TRANSFORM", ALGORITHM_NAME::UNIQUE_REMOVE_IF_TRANSFORM },
+		{"REVERSE_REPLACE_IF_TRANSFORM", ALGORITHM_NAME::REVERSE_REPLACE_IF_TRANSFORM },
+		{"REVERSE_REMOVE_IF_TRANSFORM", ALGORITHM_NAME::REVERSE_REMOVE_IF_TRANSFORM },
+		{"TRANSFORM_TRANSFORM", ALGORITHM_NAME::TRANSFORM_TRANSFORM },
+		{"REPLACE_IF_TRANSFORM", ALGORITHM_NAME::REPLACE_IF_TRANSFORM },
+		{"REMOVE_IF_TRANSFORM", ALGORITHM_NAME::REMOVE_IF_TRANSFORM },
+		{"UNIQUE_TRANSFORM", ALGORITHM_NAME::UNIQUE_TRANSFORM },
+		{"REVERSE_TRANSFORM", ALGORITHM_NAME::REVERSE_TRANSFORM }
 	};
 
 	ALGORITHM_NAME algo = nameToAlgo[algorithm_name];
@@ -229,8 +222,7 @@ int main(int argc, char* argv[])
 	using namespace hpx::program_options;
 	options_description desc_commandline("usage" HPX_APPLICATION_STRING " [options]");
 
-	desc_commandline.add_options()("algorithm_name", hpx::program_options::value<std::string>()->default_value("UNIQUE_REPLACE_IF_FOR"), "algorithm name (default: UNIQUE_REPLACE_IF_FOR)")
-		("num_iterations", hpx::program_options::value<unsigned int>()->default_value(5), "number of iterations (default: 5)")
+	desc_commandline.add_options()("algorithm_name", hpx::program_options::value<std::string>()->default_value("UNIQUE_REPLACE_IF_TRANSFORM"), "algorithm name (default: UNIQUE_REPLACE_IF_TRANSFORM)")
 		("max_i", hpx::program_options::value<int>()->default_value(28), "max size 2^i (default: 28)");
 
 	// Initialize and run HPX

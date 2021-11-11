@@ -2,3 +2,5 @@ cmake -DCMAKE_BUILD_TYPE=Release -DHPX_DIR=C:\Users\targe\Documents\hpx1\build\l
 
 /work/jedi18/src/hpx/build/lib/cmake/HPX 
 /work/jedi18/src/range-v3/build
+
+--benchmark_out=<filename> --benchmark_out_format=json
